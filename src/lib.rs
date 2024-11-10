@@ -10,11 +10,14 @@ pub use clickhouse;
 use clickhouse::{Client, error::{Error, Result}};
 use tokio::{runtime::Runtime};
 
+
+#[allow(missing_docs)]
 pub struct ClickHouseConnection {
     client: Client,
     rt: Arc<Runtime>,
 }
 
+///An `r2d2::ManageConnection` for `clickhouse::Client`
 #[derive(Clone)]
 pub struct ClickHouseConnectionManager {
     client: Client,
