@@ -1,15 +1,16 @@
 //! ClickHouse support for the `r2d2` connection pool.
 #![warn(missing_docs)]
 
-use std::sync::{Arc};
-pub use tokio;
-pub use r2d2;
 pub use clickhouse;
+pub use r2d2;
+use std::sync::Arc;
+pub use tokio;
 
-
-use clickhouse::{Client, error::{Error, Result}};
-use tokio::{runtime::Runtime};
-
+use clickhouse::{
+    error::{Error, Result},
+    Client,
+};
+use tokio::runtime::Runtime;
 
 #[allow(missing_docs)]
 pub struct ClickHouseConnection {
@@ -25,17 +26,20 @@ pub struct ClickHouseConnectionManager {
 }
 
 impl ClickHouseConnectionManager {
-
     /// Create a new ClickHouse Connection Manager based on specified parameters
-    pub fn new(url: String, username: String, password: String, database: String) -> ClickHouseConnectionManager {
-        ClickHouseConnectionManager{
+    pub fn new(
+        url: String,
+        username: String,
+        password: String,
+        database: String,
+    ) -> ClickHouseConnectionManager {
+        ClickHouseConnectionManager {
             client: Client::default()
                 .with_url(url)
                 .with_user(username)
                 .with_password(password)
                 .with_database(database),
-            rt: Arc::new(Runtime::new()
-                .unwrap()),
+            rt: Arc::new(Runtime::new().unwrap()),
         }
     }
 }
@@ -46,14 +50,15 @@ impl r2d2::ManageConnection for ClickHouseConnectionManager {
     fn connect(&self) -> Result<Self::Connection, Self::Error> {
         Ok(ClickHouseConnection {
             rt: self.rt.clone(),
-            client: self.client.clone()
+            client: self.client.clone(),
         })
     }
 
     fn is_valid(&self, conn: &mut Self::Connection) -> Result<(), Self::Error> {
-        let _ = conn.rt.block_on(async {
-            conn.client.query("SELECT 1").fetch_all::<String>().await
-        }).expect("Connection error");
+        let _ = conn
+            .rt
+            .block_on(async { conn.client.query("SELECT 1").fetch_all::<String>().await })
+            .expect("Connection error");
 
         Ok(())
     }
@@ -61,15 +66,12 @@ impl r2d2::ManageConnection for ClickHouseConnectionManager {
     fn has_broken(&self, _conn: &mut Self::Connection) -> bool {
         false // Clickhouse-rs doesn't provide a way to check if a connection is broken
     }
-
 }
-
 
 #[cfg(test)]
 mod test {
-    use std::{env};
     use crate::ClickHouseConnectionManager;
-
+    use std::env;
 
     fn get_test_config() -> (String, String, String, String) {
         (
@@ -79,7 +81,6 @@ mod test {
             env::var("CLICKHOUSE_DATABASE").unwrap_or_else(|_| "default".to_string()),
         )
     }
-
 
     #[test]
     fn query_pool() {
@@ -100,20 +101,21 @@ mod test {
                 let conn = pool.get().expect("Failed to acquire connection from pool");
 
                 let _ = conn
-                    .rt.block_on(async {
-                    conn.client.query("SELECT version()")
-                        .fetch_all::<String>()
-                    .await
-                }).expect("Failed to execute query");
-
+                    .rt
+                    .block_on(async {
+                        conn.client
+                            .query("SELECT version()")
+                            .fetch_all::<String>()
+                            .await
+                    })
+                    .expect("Failed to execute query");
             });
 
             tasks.push(th);
-
         }
 
-        for th in tasks{
-            let _ = th.join().expect("Thread panicked");
+        for th in tasks {
+            th.join().expect("Thread panicked");
         }
     }
 }
