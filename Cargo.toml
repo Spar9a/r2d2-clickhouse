@@ -1,0 +1,21 @@
+[package]
+name = "r2d2-clickhouse"
+version = "0.1.0"
+edition = "2021"
+authors = ["Parfenyuk Anton <parfenuk.anton@gmail.com>"]
+license = "MIT"
+description = "ClickHouse support for the r2d2 connection pool"
+repository = "https://github.com/Spar9a/r2d2-clickhouse"
+keywords = ["clickhouse", "sql", "pool", "database", "r2d2"]
+rust-version = "1.70"
+
+[lints.rust]
+rust_2018_idioms = { level = "warn", priority = -1 }
+unreachable_pub = "warn"
+# TODO: missing_docs = "warn"
+unexpected_cfgs = "allow" # for `docsrs`
+
+[dependencies]
+r2d2 = "0.8.9"
+clickhouse = {version = "0.13.1", features = ["rustls-tls"]}
+tokio = { version = "1.41.1", features = ["full"] }
